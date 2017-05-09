@@ -1,0 +1,243 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Drone Command Center</title>
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      body {background-image : url("bg3.jpg"); }
+      form { background: #000; padding: 3px; position: relative; align: top; width: 100%; }
+      form input { border: 0; padding: 10px; width: 90%; margin-right: .5%; }
+      form button { width: 9%; background: rgb(130, 224, 255); border: none; padding: 10px; }
+      #messages { list-style-type: none; margin: 0; padding: 0; }
+      #messages li { padding: 5px 10px; }
+      #messages li:nth-child(odd) { background: #eee; }
+#drone_messages { list-style-type: none; margin: 0; padding: 0; }
+#drone_messages li {padding: 5px 10px; }
+#drone_messages li:nth-child(odd) { background: #eee; }
+#wrapper {width: 100%; height: 80%;}
+.stream-wrapper{width:640px; height:480px; position:fixed; left : 415px; top : 40px; border : 2px solid black; background-color :#F2F2F2;}      
+#droneinfo_wrapper {width: 500px; height: 480px; position : fixed; right : 10px; top : 40px; border : 1px solid black; background-color :#F2F2F2;}
+#log_wrapper {width: 100%; height: 30%; position: fixed; left : 10px; width : 380px;}
+#log_left {width: 380px; height: 350px; position: fixed; top : 40px; left : 10px;border-radius : 10px; border: 1px solid black; background-color :#F2F2F2; padding-left : 10px; padding-top : 10px;}
+#log_right {width: 380px; height: 350px; position: fixed; top : 400px; left : 10px;border-radius : 10px; border: 1px solid black; background-color :#F2F2F2; padding-top : 10px; padding-left : 10px;}
+#renderCanvas {
+            width   : 100%;
+            height  : 100%;
+	    border : 1px solid black;
+            touch-action: none;
+
+}
+#videoCanvas {
+			padding : 10px 10px 10px 10px;
+			width: 640px;
+			height: 480px;
+			border : 5px solid black;
+		}
+	.menu 							{padding-bottom : 5px;
+									 padding-top : 5px;
+									 position : relative;
+									 float : top;
+									 height : 10%;}
+								 
+									 
+    .menu ul						{display : inline;
+									 padding-bottom : 10px;}
+
+	.menu ul li						{display : inline;
+									 list-style-type : none;
+									 padding-right : 25px;
+									 padding-left : 15px;}
+									 
+	.menu ul li a					{text-decoration : none;
+									 font-size : 18px; font-family : Ubuntu, Sans Serif;}
+
+	.menu ul li #login				{padding-left : 10%;
+									 text-decoration : none;}
+	
+    .menu ul li a:hover				{text-decoration : overline;}
+	
+	.menu ul li a:link				{color : #F2F2F2;}
+    </style>
+<link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Ubuntu:regular,bold&subset=Latin">
+  </head>
+  <body>
+	<div class="menu">
+	
+		<ul>
+			<li><p>Mikko Huuhka , Software Engineer</p></li>
+			<li><a href="/var/www/html/Projects.html">Work</a></li>
+			<li><a href="/var/www/html/aboutme.html">Info</a></li>
+			<li><a href="/var/www/html/contactme.html">Contacts</a></li>
+			<li><a href="/var/www/html/cv.html">CV</a></li>
+			<li><a href="/var/www/html/login.html" id="login">Login</a></li>
+			
+		</ul>
+	</div>
+	</div>
+	<div id="wrapper">
+		<div class="stream-wrapper">
+			<canvas id="videoCanvas" width="640" height="480">
+				<p>
+					Please use a browser that supports the Canvas Element, like
+					<a href="http://www.google.com/chrome">Chrome</a>,
+					<a href="http://www.mozilla.com/firefox/">Firefox</a>,
+					<a href="http://www.apple.com/safari/">Safari</a> or Internet Explorer 10
+					</p>
+			</canvas>
+		</div>
+	
+		<div id="droneinfo_wrapper">
+    			<canvas id="renderCanvas"></canvas>
+		</div>
+
+		<div id="log_wrapper">
+			<div id="log_left">
+				<p> Incoming Data to Client: </p>
+				<ul id="drone_messages"></ul>
+			</div>
+			<div id="log_right">
+				<p>Sent Messages @drone: </p>
+				<ul id="messages"></ul>
+			</div>
+		</div>
+
+	</div>
+
+<script src="https://cdn.socket.io/socket.io-1.4.5.js"></script>
+<script>
+  var socket = io('http://192.168.0.20:3000');
+  socket.on('connect', function(){
+
+});
+  socket.on('event', function(data){});
+  socket.on('disconnect', function(){});
+</script>
+<script src="http://code.jquery.com/jquery-1.11.1.js"></script>
+<script src="scripts/babylon.2.3.js"></script>
+<script src="scripts/drone_3d.js"></script>
+<script>
+ 
+
+
+ //var socket = io();
+ // var socket = new io.Socket();
+
+ //   socket.connect('192.168.0.20:3000'); 
+
+  $('form').submit(function(){
+    socket.emit('client_messages', $('#m').val());
+    $('#m').val('');
+    return false;
+  });
+  socket.on('KeymapUpdate', function(msg){
+    $('#messages').append($('<li>').text(msg));
+  });
+
+ socket.on('IOrequest', function(msg){
+    $('#drone_messages').append($('<li>').text(msg));
+  });
+
+var up = 0;
+var down = 0;
+var left = 0;
+var right = 0;
+var forward = 0;
+var backward = 0;
+var clockwise = 0;
+var cclockwise = 0;
+
+var keys = {};
+var converted;
+var converted_temp = 1;
+
+$(document).keydown(function(e){
+    keys[e.which] = true
+	addKeys();
+	convertKeys();
+	sendKeys();
+});
+
+$(document).keyup(function (e) {
+    delete keys[e.which];
+	removeKeys();
+	convertKeys();
+	sendKeys();
+});
+
+function addKeys() {
+	for (var i in keys) {
+		if (!keys.hasOwnProperty(i)) continue;
+		if (i == 65) {up = 1;}		
+		if (i == 90) {down = 1;}
+		if (i == 100) {left = 1;}
+		if (i == 102) {right = 1;}
+		if (i == 104) {forward = 1;}
+		if (i == 98) {backward = 1;}
+		if (i == 105) {clockwise = 1;}
+		if (i == 103) {cclockwise = 1;}
+	}
+}
+
+function removeKeys() {
+	var upfound = false;
+	var downfound = false;
+	var leftfound = false;
+	var rightfound = false;
+	var forwardfound = false;
+	var backwardfound = false;
+	var clockwisefound = false;
+	var cclockwisefound = false;	
+
+	for (var i in keys) {
+		if (i == 65) {upfound = true;}
+                if (i == 90) {downfound = true;}
+                if (i == 100) {leftfound = true;}
+                if (i == 102) {rightfound = true;}
+                if (i == 104) {forwardfound = true;}
+                if (i == 98) {backwardfound = true;}
+		if (i == 103) {cclockwisefound = true;}
+		if (i == 105) {clockwisefound = true;}
+	}
+
+	if (upfound == false) {up = 0;}
+        if (downfound == false) {down = 0;}
+        if (leftfound == false) {left = 0;}
+        if (rightfound == false) {right = 0;}
+        if (forwardfound == false) {forward = 0;}
+        if (backwardfound == false) {backward = 0;}
+	if (clockwisefound == false) {clockwise = 0;}
+	if (cclockwisefound == false) {cclockwise = 0;}
+}
+
+function convertKeys() {
+	converted = (left +''+ right +''+ forward +''+ backward +''+ cclockwise +''+ clockwise +''+ up +''+ down);
+	console.log(converted)
+}
+
+function sendKeys() {
+	if(converted != converted_temp){
+		socket.emit('KeymapUpdate', converted);
+		converted_temp = converted;
+	}
+	scrollBottom();
+}
+
+function scrollBottom() {
+$('#log_left').scrollTop($('#log_left')[0].scrollHeight);
+$('#log_right').scrollTop($('#log_right')[0].scrollHeight);
+}
+
+
+GLOBAL.drone_x_axis = 0;
+GLOBAL.drone_y_axis = 0;
+</script>
+	<script type="text/javascript" src="scripts/jsmpg.js"></script>
+	<script type="text/javascript">
+		// Setup the WebSocket connection and start the player
+		var client = new WebSocket( 'ws:192.168.0.20:8084/' );
+
+		var canvas = document.getElementById('videoCanvas');
+		var player = new jsmpeg(client, {canvas:canvas});
+	</script>
+  </body>
+</html>

@@ -1,0 +1,21 @@
+RASPBERRY IO
+
+pin 2. 5V input
+pin 3.I2C SDA /Harmaa
+pin 4.Motor1
+pin 5.I2C SCL 
+pin 14.Ground
+pin 17.Motor2
+pin 27.Motor3
+pin 22.Motor4
+
+Kallistus eteen Y-
+Kallistus vasemmalle X-
+Kallistus oikealle X+
+Kallistus taakse Y+
+
+Moottorit
+Motor1 = FL
+Motor2 = FR
+Motor3 = RR
+Motor4 = RL
